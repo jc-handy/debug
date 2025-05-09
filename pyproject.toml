@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jc-debug"
-version = "0.1.1"  # Consider using a proper versioning scheme
+version = "1.0.0"  # Consider using a proper versioning scheme
 authors = [
   { name="Jeff Clough", email="jeff@cloughcottage.com" },
 ]
@@ -12,16 +12,13 @@ description = "Makes debugging to the console both simpler and much more powerfu
 readme = "README.md"
 license = { file="LICENSE" }
 requires-python = ">=3.11"
-# Add your dependencies here, for example:
-# dependencies = [
-#   "requests>=2.28",
-#   "numpy>=1.24",
-# ]
+dependencies = [
+]
 keywords = ["utility", "toolkit", "convenience"]
 classifiers = [
-  "Development Status :: 3 - Alpha",  # Adjust as your package matures
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",  # Update if you choose a different license
+  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Operating System :: OS Independent",
@@ -29,4 +26,3 @@ classifiers = [
 
 [project.urls]
 "Homepage" = "https://github.com/jc-handy/debug"
-#"Bug Tracker" = "https://your-bug-tracker-url.example.com/issues"  # If you have one
