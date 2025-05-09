@@ -1,39 +1,47 @@
-# Debug
+<a id="debug"></a>
 
-## Description
-This package simplifies debug output and makes it more powerful.
+# debug
 
-## Installation
-Run `pip install jc-debug` to install it. This will install the package named "debug" in your site-packages.
-
-## Getting Started
 This debug module a class named DebugChannel, instances of which are
 useful for adding temporary or conditional debug output to CLI scripts.
 
 The minimal boilerplate is pretty simple:
 
-    from debug import DebugChannel
-    dc=DebugChannel(True)
+```python
+from debug import DebugChannel
+
+dc=DebugChannel(True)
+```
+
+By default, DebugChannels are created disabled (the write no output), so
+the `True` above enables `dc` during its instantiation so it needn't be
+enabled later.
+
+A more common way of handling this is ...
+
+```python
+from argparse import ArgumentParser
+from debug import DebugChannel
+
+dc=DebugChannel()
+
+ap=ArgumentParser()
+ap.add_argument('--debug',action='store_true',help="Enable debug output.")
+opt=ap.parse_args()
+dc.enable(opt.debug)
+
+...
+```
+
+This enables the `dc` DebugChannel instance only if --debug is given on
+the script's command line.
 
 By default, output is sent to stdandard error and formatted as:
 
-```
-'{label}: [{pid}] {basename}:{line}:{function}: {indent}{message}\n'
-```
+    '{label}: [{pid}] {basename}:{line}:{function}: {indent}{message}\n'
 
-There are several variables you can include in DebugChannel's output:
-
-* date: Current date in "%Y-%m-%d" format by default.
-* time: Current time in "%H:%M:%S" format by default.
-* label: Set in the initializer, defaults to "DC".
-* pid: The current numeric process ID.
-* pathname: The full path to the source file.
-* basename: The filename of the source file.
-* function: The name of the function whence dc(...) was called. This will be "__main__" if called from outside any function.
-* line: The linenumber whence dc(...) was called.
-* code: The text of the line of code that called dc().
-* indent: The string (typically spaces) used to indent the message.
-* message: The message to be output.
+There are several variables you can include in DebugChannel's output.
+See the DebugChannel docs below for a list.
 
 So, for example, if you want to see how your variables are behaving in a
 loop, you might do something like this:
@@ -42,51 +50,49 @@ loop, you might do something like this:
 from debug import DebugChannel
 
 dc=DebugChannel(
-  True,
-  fmt="{label}: {line:3}: {indent}{message}\n"
+    True,
+    fmt="{label}: {line:3}: {indent}{message}\n"
 )
 
 dc("Entering loop ...").indent()
 for i in range(5):
-  dc(f"i={i}").indent()
-  for j in range(3):
-    dc(f"j={j}")
-  dc.undent()("Done with j loop.")
+    dc(f"i={i}").indent()
+    for j in range(3):
+        dc(f"j={j}")
+    dc.undent()("Done with j loop.")
 dc.undent()("Done with i loop.")
 ```
 
 That gives you this necely indented output. The indent() and undent()
 methods are one thing that makes DebugChannels so nice to work with.
 
-```
-DC:   8: Entering loop ...
-DC:  10:   i=0
-DC:  12:     j=0
-DC:  12:     j=1
-DC:  12:     j=2
-DC:  13:   Done with j loop.
-DC:  10:   i=1
-DC:  12:     j=0
-DC:  12:     j=1
-DC:  12:     j=2
-DC:  13:   Done with j loop.
-DC:  10:   i=2
-DC:  12:     j=0
-DC:  12:     j=1
-DC:  12:     j=2
-DC:  13:   Done with j loop.
-DC:  10:   i=3
-DC:  12:     j=0
-DC:  12:     j=1
-DC:  12:     j=2
-DC:  13:   Done with j loop.
-DC:  10:   i=4
-DC:  12:     j=0
-DC:  12:     j=1
-DC:  12:     j=2
-DC:  13:   Done with j loop.
-DC:  14: Done with i loop.
-```
+    DC:   8: Entering loop ...
+    DC:  10:   i=0
+    DC:  12:     j=0
+    DC:  12:     j=1
+    DC:  12:     j=2
+    DC:  13:   Done with j loop.
+    DC:  10:   i=1
+    DC:  12:     j=0
+    DC:  12:     j=1
+    DC:  12:     j=2
+    DC:  13:   Done with j loop.
+    DC:  10:   i=2
+    DC:  12:     j=0
+    DC:  12:     j=1
+    DC:  12:     j=2
+    DC:  13:   Done with j loop.
+    DC:  10:   i=3
+    DC:  12:     j=0
+    DC:  12:     j=1
+    DC:  12:     j=2
+    DC:  13:   Done with j loop.
+    DC:  10:   i=4
+    DC:  12:     j=0
+    DC:  12:     j=1
+    DC:  12:     j=2
+    DC:  13:   Done with j loop.
+    DC:  14: Done with i loop.
 
 That's a simple example, but you might be starting to get an idea of
 how versatile DebugChannel instances can be.
@@ -95,58 +101,59 @@ A DebugChannel can also be used as a function decorator:
 
 ```python
 import time
-from debug import DebugChannel
+from src.debug import DebugChannel
 
 def delay(**kwargs):
-  time.sleep(1)
-  return True
+    time.sleep(.1)
+    return True
 
 dc=DebugChannel(True,callback=delay)
 dc.setFormat("{label}: {function}: {indent}{message}\n")
 
 @dc
 def example1(msg):
-  print(msg)
+    print(msg)
 
 @dc
 def example2(msg,count):
-  for i in range(count):
-    example1(f"{i+1}: {msg}")
+    for i in range(count):
+        example1(f"{i+1}: {msg}")
 
 example2("First test",3)
 example2("Second test",2)
 ```
 
 This causes entry into and exit from the decorated function to be
-announced in the given DebugChannel's output. If you put that into a
-file named foo.py and then run "python3 -m foo", you'll get this:
+recorded in the given DebugChannel's output. If you put that into a file
+named foo.py and then run "python3 -m foo", you'll get this:
 
 ```
-DC: test_basics: Simple test message 2
-DC: test_basics: example2('First test',3) ...
+DC: __main__: example2('First test',3) ...
 DC: example2:     example1('1: First test') ...
 1: First test
-DC: example2:     example1(...) returns None after 27µs.
+DC: example2:     example1(...) returns None after 45µs.
 DC: example2:     example1('2: First test') ...
 2: First test
-DC: example2:     example1(...) returns None after 27µs.
+DC: example2:     example1(...) returns None after 29µs.
 DC: example2:     example1('3: First test') ...
 3: First test
-DC: example2:     example1(...) returns None after 18µs.
-DC: test_basics: example2(...) returns None after 647ms.
-DC: test_basics: example2('Second test',2) ...
+DC: example2:     example1(...) returns None after 26µs.
+DC: __main__: example2(...) returns None after 630ms.
+DC: __main__: example2('Second test',2) ...
 DC: example2:     example1('1: Second test') ...
 1: Second test
-DC: example2:     example1(...) returns None after 13µs.
+DC: example2:     example1(...) returns None after 28µs.
 DC: example2:     example1('2: Second test') ...
 2: Second test
-DC: example2:     example1(...) returns None after 20µs.
-DC: test_basics: example2(...) returns None after 430ms.
+DC: example2:     example1(...) returns None after 23µs.
+DC: __main__: example2(...) returns None after 423ms.
 ```
 
-That's a very general start.
+That's a very general start. See DebugChannel's class docs for more.
 
-## DebugChannel Class Docs
+<a id="debug.DebugChannel"></a>
+
+## DebugChannel Objects
 
 ```python
 class DebugChannel()
@@ -164,9 +171,9 @@ from debug import DebugChannel
 from loggy import LogStream
 
 dc=DebugChannel(
-  True,
-  stream=LogStream(facility='user'),
-  fmt='{label}: {basename}({line}): {indent}{message}\n'
+    True,
+    stream=LogStream(facility='user'),
+    fmt='{label}: {basename}({line}): {indent}{message}\n'
 )
 dc('Testing')
 ```
@@ -204,11 +211,11 @@ module.
 ```python
 def __init__(enabled=False,
              stream=sys.stderr,
-             label='DC',
-             indent_with='    ',
-             fmt='{label}: {basename}:{line}:{function}: {indent}{message}\n',
-             date_fmt='%Y-%m-%d',
-             time_fmt='%H:%M:%S',
+             label="DC",
+             indent_with="    ",
+             fmt="{label}: {basename}:{line}:{function}: {indent}{message}\n",
+             date_fmt="%Y-%m-%d",
+             time_fmt="%H:%M:%S",
              time_tupler=localtime,
              callback=None)
 ```
@@ -218,23 +225,22 @@ Initialize this new DebugChannel instance.
 **Arguments**:
 
 
-  * enabled      True if this DebugChannel object is allowed to output
-  messages. False if it should be quiet.
-  * stream       The stream (or stream-like object) to write messages
-  to.
-  * label        A string indicated what we're doing.
-  * indent_with  The string used to indent each level of indenture.
-  * fmt          Formatting for our output lines. See setFormat().
-  * date_fmt     Date is formatted with strftime() using this string.
-  * time_fmt     Time is formatted with strftime() using this string.
-  * time_tupler  This is either time.localtime or time.gmtime and
+  * enabled: True if this DebugChannel object is allowed to
+  output messages. False if it should be quiet.
+  * stream: The stream (or stream-like object) to write
+  messages to.
+  * label: A string indicated what we're doing.
+  * indent_with: Indenting uses this string value.
+  * fmt: Format of debug output. See setFormat().
+  * date_fmt: strftime() uses this string to format dates.
+  * time_fmt: strftime() uses this string to format times.
+  * time_tupler: This is either time.localtime or time.gmtime and
   defaults to localtime.
-  * callback     A function accepting keyword arguments and returning
-  True if the current message is to be output. The
-  keyword arguments are all the local variables of
-  DebugChannel.write(). Of particular interest might be
-  "stack" and all the variables available for
-  formatting (label, basename, pid, function, line,
+  * callback: A function accepting keyword arguments and returning
+  True if the current message is to be output. The keyword
+  arguments are all the local variables of DebugChannel.write().
+  Of particular interest might be "stack" and all the variables
+  available for formatting (label, basename, pid, function, line,
   indent, and message).
 
 <a id="debug.DebugChannel.__bool__"></a>
@@ -246,8 +252,8 @@ def __bool__()
 ```
 
 Return the Enabled state of this DebugChannel object. It is
-somtimes necessary to logically test whether our code is in debug
-mode at runtime, and this method makes that very simple.
+somtimes necessary to logically test whether our code is in
+debug mode at runtime, and this method makes that very simple.
 
 ```python
 d=DebugChannel(opt.debug)
@@ -255,9 +261,9 @@ d=DebugChannel(opt.debug)
 .
 .
 if d:
-  d("Getting diagnostics ...")
-  diagnostics=get_some_computationally_expensive_data()
-  d(diagnostics)
+    d("Getting diagnostics ...")
+    diagnostics=get_some_computationally_expensive_data()
+    d(diagnostics)
 ```
 
 <a id="debug.DebugChannel.enable"></a>
@@ -290,10 +296,11 @@ previous "enabled" state.
 def ignoreModule(name, *args)
 ```
 
-Given the name of a module, e.g. "debug"), ignore any entries in
-our call stack from that module. Any subsequent arguments must be
-the names of functions to be ignored within that module. If no such
-functions are named, all calls from that module will be ignored.
+Given the name of a module, e.g. "debug"), ignore any entries
+in our call stack from that module. Any subsequent arguments
+must be the names of functions to be ignored within that module.
+If no such functions are named, all calls from that module will
+be ignored.
 
 <a id="debug.DebugChannel.setDateFormat"></a>
 
@@ -327,12 +334,12 @@ format string.
 def setIndentString(s)
 ```
 
-Set the string to indent string. Return this DebugChannel object.
-E.g. at indent level 3, the "{indent}" portion of the formatted
-debug will contain 3 copies of the string you set with this
-function. So '  ' will indent two spaces per indention level.
-Another popular choice is '| ' to make longer indention runs easier
-to follow in the debug output.
+Set the string to indent string. Return this DebugChannel
+object. E.g. at indent level 3, the "{indent}" portion of the
+formatted debug will contain 3 copies of the string you set with
+this function. So '  ' will indent two spaces per indention
+level. Another popular choice is '| ' to make longer indention
+runs easier to follow in the debug output.
 
 <a id="debug.DebugChannel.setFormat"></a>
 
@@ -342,29 +349,31 @@ to follow in the debug output.
 def setFormat(fmt)
 ```
 
-Set the format of our debug statements. The format defaults to:
+Set the format of our debug statements. The format defaults
+to:
 
-  '{date} {time} {label}: {basename}:{function}:{line}: {indent}{message}\n'
+  '{label}: {basename}:{line}:{function}: {indent}{message}\n'
 
 Fields:
-* {date}     current date (see setDateFormat())
-* {time}     current time (see setTimeFormat())
-* {pid}      numeric ID of the current process
-* {label}    what type of thing is getting logged (default: 'DC')
-* {pathname} full path of the calling source file
-* {basename} base name of the calling source file
-* {function} name of function debug.write() was called from
-* {line}     number of the calling line of code in its source file
-* {code}     the Python code at the given line of the given file
-* {indent}   indent string multiplied by the indention level
-* {message}  the message to be written
+* {date}: current date (see setDateFormat())
+* {time}: current time (see setTimeFormat())
+* {pid}: numeric ID of the current process
+* {label}: what type of thing is getting logged (default: 'DC')
+* {pathname}: full path of the calling source file
+* {basename}: base name of the calling source file
+* {function}: name of function debug.write() was called from
+* {line}: number of the calling line of code in its source file
+* {code}: the Python code at the given line of the given file
+* {indent}: indent string multiplied by the indention level
+* {message}: the message to be written
 
-All non-field text is literal text. The '\n' at the end is required
-if you want a line ending at the end of each message. If your
-DebugChannel object is configured to write to a LogStream object
-that writes to syslog or something similar, you might want to remove
-the {date} and {time} (and maybe {label}) fields from the default
-format string to avoid logging these values redundantly.
+All non-field text is literal text. The '\n' at the end is
+required if you want a line ending at the end of each message.
+If your DebugChannel object is configured to write to a
+LogStream object that writes to syslog or something similar, you
+might want to remove the {date} and {time} (and maybe {label})
+fields from the default format string to avoid logging these
+values redundantly.
 
 <a id="debug.DebugChannel.indent"></a>
 
@@ -375,8 +384,8 @@ def indent(indent=1)
 ```
 
 Increase this object's current indenture by this value (which
-might be negative. Return this DebugChannel opject with the adjusted
-indenture. See write() for how this might be used.
+might be negative. Return this DebugChannel opject with the
+adjusted indenture. See write() for how this might be used.
 
 <a id="debug.DebugChannel.undent"></a>
 
@@ -387,8 +396,8 @@ def undent(indent=1)
 ```
 
 Decrease this object's current indenture by this value (which
-might be negative. Return this DebugChannel object with the adjusted
-indenture. See write() for how this might be used.
+might be negative. Return this DebugChannel object with the
+adjusted indenture. See write() for how this might be used.
 
 <a id="debug.DebugChannel.writelines"></a>
 
@@ -411,11 +420,11 @@ supported.
 def __call__(arg, *args, **kwargs)
 ```
 
-If this DebugChannel instance is simply being called, this method
-is a very simple wrapper around the write(...) emthod. If it is
-being used as a function decorator, that function entry and exit are
-recorded to the DebugChannel, and this becomes a more featuresome
-wrapper around the write(...) method.
+If this DebugChannel instance is simply being called, this
+method is a very simple wrapper around the write(...) emthod. If
+it is being used as a function decorator, that function entry
+and exit are recorded to the DebugChannel, and this becomes a
+more featuresome wrapper around the write(...) method.
 
 <a id="debug.DebugChannel.writeTraceback"></a>
 
@@ -436,31 +445,46 @@ output stream.
 def write(message)
 ```
 
-If this debug instance is enabled, write the given message using
-the our current format. In any case, return this DebugChannel
-instance so further operations can be performed on it. E.g.:
+If this debug instance is enabled, write the given message
+using the our current format. In any case, return this
+DebugChannel instance so further operations can be performed on
+it. E.g.:
 
 ```python
 debug=DebugChannel(opt.debug)
 debug('Testing')
 
 def func(arg):
-  debug.write("Entering func(arg=%r)"%(arg,)).indent(1)
-  for i in range(3):
-    debug(f"{i=}")
-  debug.indent(-1).write("Leaving func(...) normally")
+    debug.write("Entering func(arg=%r)"%(arg,)).indent(1)
+    for i in range(3):
+        debug(f"{i=}")
+    debug.indent(-1).write("Leaving func(...) normally")
 ```
 
-This lets the caller decide whether to change indenture among other
-things before or after the message is written.
+This lets the caller decide whether to change indenture among
+other things before or after the message is written.
 
 If message is a single string containing no line endings, that
 single value will be outout. if message contains at least one
-newline (the value of os.linesep), each line is output on a debug
-line of its own.
+newline (the value of os.linesep), each line is output on a
+debug line of its own.
 
-If message is a list or tuple, each item in that sequence will be
-output on its own line.
+If message is a list or tuple, each item in that sequence will
+be output on its own line.
 
-If message is a dictionary, each key/value pair is written out as
-"key: value" to its own log line.
+If message is a dictionary, each key/value pair is written out
+as "key: value" to its own log line.
+
+<a id="debug.line_iter"></a>
+
+#### line\_iter
+
+```python
+def line_iter(s)
+```
+
+This iterator facilitates stepping through each line of a multi-
+line string in place, without having to create a list containing
+those lines. This is similar to `str.splitlines()`, but it yields
+slices of the original string rather than returning a list of copies
+of segments of the original.
