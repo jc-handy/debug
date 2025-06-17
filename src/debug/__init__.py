@@ -155,7 +155,7 @@ __all__ = [
     "DebugChannel",
     "line_iter",
 ]
-__version__ = "0.1.0"
+__version__ = "1.0.2"
 
 import inspect, os, sys, traceback
 
@@ -556,7 +556,7 @@ class DebugChannel:
                 message = left
                 self.stream.write(self.fmt.format(**locals()))
                 for message in messages:
-                    message = self.indstr + message
+                    message = self.indstr + repr(message)
                     self.stream.write(self.fmt.format(**locals()))
                 message = right
                 self.stream.write(self.fmt.format(**locals()))
@@ -565,7 +565,7 @@ class DebugChannel:
                 message = "{"
                 self.stream.write(self.fmt.format(**locals()))
                 for k in messages.keys():
-                    message = f"{self.indstr}{k}: {messages[k]}"
+                    message = f"{self.indstr}{k!r}: {messages[k]!r}"
                     self.stream.write(self.fmt.format(**locals()))
                 message = "}"
                 self.stream.write(self.fmt.format(**locals()))

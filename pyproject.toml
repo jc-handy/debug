@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jc-debug"
-version = "1.0.0"  # Consider using a proper versioning scheme
+version = "1.0.2"  # Consider using a proper versioning scheme
 authors = [
   { name="Jeff Clough", email="jeff@cloughcottage.com" },
 ]

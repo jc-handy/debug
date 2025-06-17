@@ -3,8 +3,11 @@ from io import StringIO
 from src.debug import DebugChannel
 from pprint import pprint
 
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # We'll be sending debug output to this stream so we can write tests
 # against its content.
+
 out=StringIO()
 
 def clear_output(output_stream=out):
@@ -29,6 +32,11 @@ def outstr_lines(output_stream=out):
 
 
 dc=DebugChannel(True,stream=out)
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+ # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Test code begins here.
 
 @dc
 def exception_test():
@@ -79,6 +87,36 @@ DC: test_basics:     Message 1
 DC: test_basics:     Message 2
 """
         assert dc.indlev==0
+
+        # Test tuple output.
+        dc(('a',2,True))
+        assert outstr()=="""\
+DC: test_basics: (
+DC: test_basics:     'a'
+DC: test_basics:     2
+DC: test_basics:     True
+DC: test_basics: )
+"""
+
+        # Test list output.
+        dc(['a',2,True])
+        assert outstr()=="""\
+DC: test_basics: [
+DC: test_basics:     'a'
+DC: test_basics:     2
+DC: test_basics:     True
+DC: test_basics: ]
+"""
+
+        # Test dictionary output.
+        dc({'a':1,2:'b','c':True})
+        assert outstr()=="""\
+DC: test_basics: {
+DC: test_basics:     'a': 1
+DC: test_basics:     2: 'b'
+DC: test_basics:     'c': True
+DC: test_basics: }
+"""
 
         @dc
         def example1(msg):
