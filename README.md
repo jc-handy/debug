@@ -56,9 +56,9 @@ dc=DebugChannel(
 
 dc("Entering loop ...").indent()
 for i in range(5):
-    dc(f"i={i}").indent()
+    dc(f"{i=}").indent()
     for j in range(3):
-        dc(f"j={j}")
+        dc(f"{j=}")
     dc.undent()("Done with j loop.")
 dc.undent()("Done with i loop.")
 ```
@@ -148,6 +148,57 @@ DC: example2:     example1('2: Second test') ...
 DC: example2:     example1(...) returns None after 23µs.
 DC: __main__: example2(...) returns None after 423ms.
 ```
+
+When outputting a data structure, it's nice to be a little structured
+about it. So if you send a list, tuple, dict, or set to a DebugChannel
+instance as the whole message, it will be formatted one item at a time
+in the output.
+
+```python
+from debug import DebugChannel
+
+dc=DebugChannel(True,fmt="{label}: {line:3}: {indent}{message}\n")
+
+l="this is a test".split()
+s=set(l)
+d=dict(zip('abcd',l))
+
+dc("l:")(l)
+dc("s:")(s)
+dc("d:")(d)
+```
+
+Notice the idiom of using dc(...)'s output as the DebugChannel
+instance itself, allowing further manipulation in the same "breath."
+Here's the output:
+
+```python
+DC:  12: l:
+DC:  12: [
+DC:  12:     'this',
+DC:  12:     'is',
+DC:  12:     'a',
+DC:  12:     'test'
+DC:  12: ]
+DC:  13: s:
+DC:  13: {
+DC:  13:     'a',
+DC:  13:     'is',
+DC:  13:     'test',
+DC:  13:     'this'
+DC:  13: }
+DC:  14: d:
+DC:  14: {
+DC:  14:     'a': 'this',
+DC:  14:     'b': 'is',
+DC:  14:     'c': 'a',
+DC:  14:     'd': 'test'
+DC:  14: }
+```
+
+Notice sets are output in alphabetical order (according to their
+repr() values). Since sets are unordered by nature, this makes them
+easier to inspect visually without misrepresenting their contents.
 
 That's a very general start. See DebugChannel's class docs for more.
 
