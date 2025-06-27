@@ -2,8 +2,8 @@
 
 # debug
 
-This debug module a class named DebugChannel, instances of which are
-useful for adding temporary or conditional debug output to CLI scripts.
+This debug module a class named DebugChannel, instances of which are useful for
+adding temporary or conditional debug output to CLI scripts.
 
 The minimal boilerplate is pretty simple:
 
@@ -13,9 +13,9 @@ from debug import DebugChannel
 dc=DebugChannel(True)
 ```
 
-By default, DebugChannels are created disabled (the write no output), so
-the `True` above enables `dc` during its instantiation so it needn't be
-enabled later.
+By default, DebugChannels are created disabled (the write no output), so the
+`True` above enables `dc` during its instantiation so it needn't be enabled
+later.
 
 A more common way of handling this is ...
 
@@ -33,18 +33,18 @@ dc.enable(opt.debug)
 ...
 ```
 
-This enables the `dc` DebugChannel instance only if --debug is given on
-the script's command line.
+This enables the `dc` DebugChannel instance only if --debug is given on the
+script's command line.
 
 By default, output is sent to stdandard error and formatted as:
 
     '{label}: [{pid}] {basename}:{line}:{function}: {indent}{message}\n'
 
-There are several variables you can include in DebugChannel's output.
-See the DebugChannel docs below for a list.
+There are several variables you can include in DebugChannel's output. See the
+DebugChannel docs below for a list.
 
-So, for example, if you want to see how your variables are behaving in a
-loop, you might do something like this:
+So, for example, if you want to see how your variables are behaving in a loop,
+you might do something like this:
 
 ```python
 from debug import DebugChannel
@@ -63,8 +63,8 @@ for i in range(5):
 dc.undent()("Done with i loop.")
 ```
 
-That gives you this necely indented output. The indent() and undent()
-methods are one thing that makes DebugChannels so nice to work with.
+That gives you this necely indented output. The indent() and undent() methods
+are one thing that makes DebugChannels so nice to work with.
 
     DC:   8: Entering loop ...
     DC:  10:   i=0
@@ -94,8 +94,8 @@ methods are one thing that makes DebugChannels so nice to work with.
     DC:  13:   Done with j loop.
     DC:  14: Done with i loop.
 
-That's a simple example, but you might be starting to get an idea of
-how versatile DebugChannel instances can be.
+That's a simple example, but you might be starting to get an idea of how
+versatile DebugChannel instances can be.
 
 A DebugChannel can also be used as a function decorator:
 
@@ -123,9 +123,9 @@ example2("First test",3)
 example2("Second test",2)
 ```
 
-This causes entry into and exit from the decorated function to be
-recorded in the given DebugChannel's output. If you put that into a file
-named foo.py and then run "python3 -m foo", you'll get this:
+This causes entry into and exit from the decorated function to be recorded in
+the given DebugChannel's output. If you put that into a file named foo.py and
+then run "python3 -m foo", you'll get this:
 
 ```
 DC: __main__: example2('First test',3) ...
@@ -149,10 +149,9 @@ DC: example2:     example1(...) returns None after 23µs.
 DC: __main__: example2(...) returns None after 423ms.
 ```
 
-When outputting a data structure, it's nice to be a little structured
-about it. So if you send a list, tuple, dict, or set to a DebugChannel
-instance as the whole message, it will be formatted one item at a time
-in the output.
+When outputting a data structure, it's nice to be a little structured about it.
+So if you send a list, tuple, dict, or set to a DebugChannel instance as the
+whole message, it will be formatted one item at a time in the output.
 
 ```python
 from debug import DebugChannel
@@ -168,9 +167,8 @@ dc("s:")(s)
 dc("d:")(d)
 ```
 
-Notice the idiom of using dc(...)'s output as the DebugChannel
-instance itself, allowing further manipulation in the same "breath."
-Here's the output:
+Notice the idiom of using dc(...)'s output as the DebugChannel instance itself,
+allowing further manipulation in the same "breath." Here's the output:
 
 ```python
 DC:  12: l:
@@ -196,9 +194,9 @@ DC:  14:     'd': 'test'
 DC:  14: }
 ```
 
-Notice sets are output in alphabetical order (according to their
-repr() values). Since sets are unordered by nature, this makes them
-easier to inspect visually without misrepresenting their contents.
+Notice sets are output in alphabetical order (according to their repr()
+values). Since sets are unordered by nature, this makes them easier to inspect
+visually without misrepresenting their contents.
 
 That's a very general start. See DebugChannel's class docs for more.
 

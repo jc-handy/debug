@@ -155,7 +155,7 @@ __all__ = [
     "DebugChannel",
     "line_iter",
 ]
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 import inspect, os, sys, traceback
 
@@ -547,16 +547,23 @@ class DebugChannel:
                     return self  # Return without writing any output.
 
             # Format our message and write it to the debug stream.
-            if isinstance(message, (list, tuple)):
+            sort=False
+            if isinstance(message, (list, set, tuple)):
                 if isinstance(message, tuple):
                     left, right = "()"
+                elif isinstance(message, set):
+                    left, right = "{}"
+                    message=sorted(list(message),key=lambda val:repr(val))
                 else:
                     left, right = "[]"
                 messages = message
                 message = left
                 self.stream.write(self.fmt.format(**locals()))
-                for message in messages:
-                    message = self.indstr + repr(message)
+                for i in range(len(messages)):
+                    m = messages[i]
+                    message = f"{self.indstr}{m!r}"
+                    if i<len(messages)-1:
+                        message+=','
                     self.stream.write(self.fmt.format(**locals()))
                 message = right
                 self.stream.write(self.fmt.format(**locals()))
@@ -564,8 +571,10 @@ class DebugChannel:
                 messages = dict(message)
                 message = "{"
                 self.stream.write(self.fmt.format(**locals()))
-                for k in messages.keys():
-                    message = f"{self.indstr}{k!r}: {messages[k]!r}"
+                for i,(k,v) in enumerate(messages.items()):
+                    message = f"{self.indstr}{k!r}: {v!r}"
+                    if i<len(messages)-1:
+                        message+=','
                     self.stream.write(self.fmt.format(**locals()))
                 message = "}"
                 self.stream.write(self.fmt.format(**locals()))

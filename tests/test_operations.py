@@ -92,8 +92,8 @@ DC: test_basics:     Message 2
         dc(('a',2,True))
         assert outstr()=="""\
 DC: test_basics: (
-DC: test_basics:     'a'
-DC: test_basics:     2
+DC: test_basics:     'a',
+DC: test_basics:     2,
 DC: test_basics:     True
 DC: test_basics: )
 """
@@ -102,18 +102,28 @@ DC: test_basics: )
         dc(['a',2,True])
         assert outstr()=="""\
 DC: test_basics: [
-DC: test_basics:     'a'
-DC: test_basics:     2
+DC: test_basics:     'a',
+DC: test_basics:     2,
 DC: test_basics:     True
 DC: test_basics: ]
+"""
+
+        # Test set output.
+        dc(set(['a',2,True]))
+        assert outstr()=="""\
+DC: test_basics: {
+DC: test_basics:     'a',
+DC: test_basics:     2,
+DC: test_basics:     True
+DC: test_basics: }
 """
 
         # Test dictionary output.
         dc({'a':1,2:'b','c':True})
         assert outstr()=="""\
 DC: test_basics: {
-DC: test_basics:     'a': 1
-DC: test_basics:     2: 'b'
+DC: test_basics:     'a': 1,
+DC: test_basics:     2: 'b',
 DC: test_basics:     'c': True
 DC: test_basics: }
 """
