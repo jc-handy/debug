@@ -162,13 +162,12 @@ l="this is a test".split()
 s=set(l)
 d=dict(zip('abcd',l))
 
-dc("l:")(l)
-dc("s:")(s)
-dc("d:")(d)
+dc(l,'l')
+dc(s,'s')
+dc(d,'d')
 ```
 
-Notice the idiom of using dc(...)'s output as the DebugChannel instance itself,
-allowing further manipulation in the same "breath." Here's the output:
+Notice the first parameter is a data structure, and the second is the name of that data structure. This idiom creates output like this:
 
 ```python
 DC:  12: l:
@@ -249,8 +248,8 @@ line number reported in its output are something helpful to the
 caller. For instance, the source line shouldn't be anything in this
 DebugChannel class.
 
-Use the ignoreModule() method to tell the DebugChannel object ignore
-other modules, and optionally, specific functions within that
+Use the ignoreModule() method to tell the DebugChannel object to
+ignore other modules, and optionally, specific functions within that
 module.
 
 <a id="debug.DebugChannel.__init__"></a>
@@ -466,11 +465,11 @@ supported.
 #### \_\_call\_\_
 
 ```python
-def __call__(arg, *args, **kwargs)
+def __call__(*args, **kwargs)
 ```
 
 If this DebugChannel instance is simply being called, this
-method is a very simple wrapper around the write(...) emthod. If
+method is a very simple wrapper around the write(...) method. If
 it is being used as a function decorator, that function entry
 and exit are recorded to the DebugChannel, and this becomes a
 more featuresome wrapper around the write(...) method.
@@ -491,13 +490,12 @@ output stream.
 #### write
 
 ```python
-def write(message)
+def write(message, var=None)
 ```
 
 If this debug instance is enabled, write the given message
-using the our current format. In any case, return this
-DebugChannel instance so further operations can be performed on
-it. E.g.:
+using the our current format. Return this DebugChannel instance
+so further operations can be performed on it. E.g.:
 
 ```python
 debug=DebugChannel(opt.debug)
