@@ -155,7 +155,7 @@ __all__ = [
     "DebugChannel",
     "line_iter",
 ]
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 import inspect, os, sys, traceback
 
@@ -397,7 +397,7 @@ class DebugChannel:
 
         return self.write(seq)
 
-    def __call__(self, arg, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """If this DebugChannel instance is simply being called, this
         method is a very simple wrapper around the write(...) emthod. If
         it is being used as a function decorator, that function entry
@@ -406,6 +406,7 @@ class DebugChannel:
 
         lines = inspect.stack(context=2)[1].code_context
         if lines and any(l.lstrip().startswith("@") for l in lines):
+            arg=args[0]
             # We're being called as a decorator.
             def f(*args, **kwargs):
                 # Record how this function is being called.
@@ -453,7 +454,7 @@ class DebugChannel:
             return f
 
         # This DebugChannel instance is being called as if it were a function.
-        return self.write(arg)
+        return self.write(*args)
 
     def writeTraceback(self, exc):
         """Write the given exception with traceback information to our
@@ -463,11 +464,14 @@ class DebugChannel:
             for line in traceback.format_exception(exc):
                 self.write(line.rstrip())
 
-    def write(self, message):
+    def write(self, message, var=None):
         """If this debug instance is enabled, write the given message
-        using the our current format. In any case, return this
-        DebugChannel instance so further operations can be performed on
-        it. E.g.:
+        using the our current format. If the var argument is given and
+        message is of type list, tuple, set, or dict, then var is
+        treated as the caller's name for the `message` parameter.
+
+        In any case, return this DebugChannel instance so further
+        operations can be performed on it. E.g.:
 
         ```python
         debug=DebugChannel(opt.debug)
@@ -494,97 +498,106 @@ class DebugChannel:
         If message is a dictionary, each key/value pair is written out
         as "key: value" to its own log line."""
 
-        if self.enabled:
-            # Update our formatted date and time if necessary.
-            t = int(get_time())  # Let's truncate at whole seconds.
-            if self._t != t:
-                t = self.time_tupler(t)
-                self._t = t
-                self.date = strftime(self.date_fmt, t)
-                self.time = strftime(self.time_fmt, t)
-            # Set local variables for date and time so they're available for output.
-            date = self.date
-            time = self.time
-            # Find the first non-ignored stack frame whence we were called.
-            pathname, basename, line = None, None, None
-            for i, frame in enumerate(inspect.stack()):
-                # This is for debugging debug.py. It turns out Python 3.6 has a bug in
-                # inspect.stack() that can return outrageous values for frame.index.
-                # (So I'm asking for only one line of context, and I've stopped using the
-                # frame's untrustworthy index value.)
-                #       print(f"""{i}:
-                #   frame:        {frame.frame!r}
-                #   filename:     {frame.filename!r}
-                #   lineno:       {frame.lineno!r}
-                #   function:     {frame.function!r}
-                #   code_context: {frame.code_context!r}
-                #   index:        {frame.index!r}""")
-                p = os.path.normpath(frame.filename)
-                if p not in self.ignore:
+        if not self.enabled:
+            return self
+
+        # Update our formatted date and time if necessary.
+        t = int(get_time())  # Let's truncate at whole seconds.
+        if self._t != t:
+            t = self.time_tupler(t)
+            self._t = t
+            self.date = strftime(self.date_fmt, t)
+            self.time = strftime(self.time_fmt, t)
+        # Set local variables for date and time so they're available for output.
+        date = self.date
+        time = self.time
+        # Find the first non-ignored stack frame whence we were called. Bail out
+        # if the calling code is to be ignored for debugging purposes.
+        pathname, basename, line = None, None, None
+        for i, frame in enumerate(inspect.stack()):
+            # This is for debugging debug.py. It turns out Python 3.6 has a bug in
+            # inspect.stack() that can return outrageous values for frame.index.
+            # (So I'm asking for only one line of context, and I've stopped using the
+            # frame's untrustworthy index value.)
+            #       print(f"""{i}:
+            #   frame:        {frame.frame!r}
+            #   filename:     {frame.filename!r}
+            #   lineno:       {frame.lineno!r}
+            #   function:     {frame.function!r}
+            #   code_context: {frame.code_context!r}
+            #   index:        {frame.index!r}""")
+            p = os.path.normpath(frame.filename)
+            if p not in self.ignore:
+                break
+                if frame.function not in self.ignore[p]:
                     break
-                    if frame.function not in self.ignore[p]:
-                        break
-            # Set some local variables so they'll be available to our callback
-            # function and for formatting.
-            pid = self.pid
-            pathname = os.path.normpath(frame.filename)
-            basename = os.path.basename(pathname)
-            line = frame.lineno
-            function = frame.function
-            if str(function) == "<module>":
-                function = "__main__"
-            code = frame.code_context
-            if code:
-                code = code[0].rstrip()
-            else:
-                code = None
-            indent = self.indstr * self.indlev
-            label = self.label
+        # Set some local variables so they'll be available to our callback
+        # function and for formatting.
+        pid = self.pid
+        pathname = os.path.normpath(frame.filename)
+        basename = os.path.basename(pathname)
+        line = frame.lineno
+        function = frame.function
+        if str(function) == "<module>":
+            function = "__main__"
+        code = frame.code_context
+        if code:
+            code = code[0].rstrip()
+        else:
+            code = None
+        indent = self.indstr * self.indlev
+        label = self.label
 
-            # If our caller provided a callback function, call that now.
-            if self.callback:
-                if not self.callback(**locals()):
-                    return self  # Return without writing any output.
+        # If our caller provided a callback function, call that now.
+        if self.callback:
+            if not self.callback(**locals()):
+                return self  # Return without writing any output.
 
-            # Format our message and write it to the debug stream.
-            sort=False
-            if isinstance(message, (list, set, tuple)):
-                if isinstance(message, tuple):
-                    left, right = "()"
-                elif isinstance(message, set):
-                    left, right = "{}"
-                    message=sorted(list(message),key=lambda val:repr(val))
-                else:
-                    left, right = "[]"
-                messages = message
-                message = left
-                self.stream.write(self.fmt.format(**locals()))
-                for i in range(len(messages)):
-                    m = messages[i]
-                    message = f"{self.indstr}{m!r}"
-                    if i<len(messages)-1:
-                        message+=','
-                    self.stream.write(self.fmt.format(**locals()))
-                message = right
-                self.stream.write(self.fmt.format(**locals()))
-            elif isinstance(message, dict):
-                messages = dict(message)
-                message = "{"
-                self.stream.write(self.fmt.format(**locals()))
-                for i,(k,v) in enumerate(messages.items()):
-                    message = f"{self.indstr}{k!r}: {v!r}"
-                    if i<len(messages)-1:
-                        message+=','
-                    self.stream.write(self.fmt.format(**locals()))
-                message = "}"
-                self.stream.write(self.fmt.format(**locals()))
-            elif isinstance(message, str) and os.linesep in message:
-                messages = message
-                for message in line_iter(messages):
-                    self.stream.write(self.fmt.format(**locals()))
+        # Format our message and write it to the debug stream.
+        if isinstance(message, (list, set, tuple)):
+            if isinstance(message, tuple):
+                left, right = "()"
+            elif isinstance(message, set):
+                left, right = "{}"
+                message=sorted(list(message),key=lambda val:repr(val))
             else:
+                left, right = "[]"
+            messages = message
+            if var:
+                message = f"{var} ({len(messages)}):"
                 self.stream.write(self.fmt.format(**locals()))
-            self.stream.flush()
+            message = left
+            self.stream.write(self.fmt.format(**locals()))
+            for i in range(len(messages)):
+                m = messages[i]
+                message = f"{self.indstr}{m!r}"
+                if i<len(messages)-1:
+                    message+=','
+                self.stream.write(self.fmt.format(**locals()))
+            message = right
+            self.stream.write(self.fmt.format(**locals()))
+        elif isinstance(message, dict):
+            messages = dict(message)
+            if var:
+                message = f"{var} ({len(messages)}):"
+                self.stream.write(self.fmt.format(**locals()))
+            message = "{"
+            self.stream.write(self.fmt.format(**locals()))
+            for i,(k,v) in enumerate(messages.items()):
+                message = f"{self.indstr}{k!r}: {v!r}"
+                if i<len(messages)-1:
+                    message+=','
+                self.stream.write(self.fmt.format(**locals()))
+            message = "}"
+            self.stream.write(self.fmt.format(**locals()))
+        elif isinstance(message, str) and os.linesep in message:
+            # Handle multiline strings here.
+            messages = message
+            for message in line_iter(messages):
+                self.stream.write(self.fmt.format(**locals()))
+        else:
+            self.stream.write(self.fmt.format(**locals()))
+        self.stream.flush()
 
         # The caller can call other DebugChannel methods on our return value.
         return self
